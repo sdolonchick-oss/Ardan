@@ -1,20 +1,445 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ardan</title>
-<style>
-body{margin:0;background:#09090d;color:#fff;font-family:Arial,sans-serif}main{max-width:900px;margin:auto;padding:35px 16px}
-h1{font-size:64px;margin:0}.sub{color:#aaa;margin:4px 0 30px}.banner{font-size:28px;font-weight:800;margin:20px 0 30px}.card{background:#14141b;border:1px solid #292934;border-radius:20px;padding:18px;margin:18px 0}video{width:100%;border-radius:14px;background:#000}
-button,input{padding:12px;border-radius:10px;border:1px solid #333;background:#202029;color:white}button{cursor:pointer;font-weight:700}.operator{display:none}.operator.show{display:block}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.row input{flex:1;min-width:180px}.meta{color:#aaa;margin:10px 0}.danger{background:#4a1717}.login{display:flex;gap:8px;flex-wrap:wrap}small{color:#777}
-</style></head><body><main>
-<h1>Ardan</h1><div class="sub">видеоплощадка</div><div class="banner">сультим нафиг пошел !</div>
-<section class="card"><h2>Видео</h2><div id="feed">Загрузка...</div></section>
-<section class="card"><h2>Я оператор</h2><div class="login"><input id="pass" type="password" placeholder="Пароль оператора"><button onclick="login()">Войти</button></div>
-<div id="op" class="operator"><div class="row"><input id="title" placeholder="Название"><input id="tags" placeholder="#хештеги"></div>
-<div class="row"><input id="file" type="file" accept="video/*"><button onclick="addVideo()">Добавить еще видео</button></div><small>Только оператор может добавлять, называть и задавать хештеги.</small></div></section>
-</main><script>
-let token=localStorage.ardanToken||"";
-async function load(){let r=await fetch("/api/videos"),a=await r.json();feed.innerHTML=a.length?a.map(v=>`<article class="card"><h2>${esc(v.title)}</h2><video controls playsinline src="${v.file}"></video><div class="meta">${esc(v.hashtags)}</div>${token?`<button class="danger" onclick="del('${v.id}')">Удалить</button>`:""}</article>`).join(""):"Пока видео нет."}
-async function login(){let r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pass.value})});if(r.ok){token=(await r.json()).token;localStorage.ardanToken=token;op.classList.add("show");load()}else alert("Неверный пароль")}
-async function addVideo(){if(!file.files[0])return alert("Выбери видео");let f=new FormData();f.append("video",file.files[0]);f.append("title",title.value);f.append("hashtags",tags.value);let r=await fetch("/api/videos",{method:"POST",headers:{Authorization:"Bearer "+token},body:f});if(!r.ok)return alert("Нужен вход оператора");title.value=tags.value=file.value="";load()}
-async function del(id){await fetch("/api/videos/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});load()}
-function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-if(token)op.classList.add("show");load();
-</script></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ardan</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      background: #08080c;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 70px;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #aaa;
+      font-size: 25px;
+      margin-bottom: 50px;
+    }
+
+    .message {
+      font-size: 40px;
+      font-weight: bold;
+      margin-bottom: 50px;
+    }
+
+    .box {
+      background: #15151c;
+      border: 2px solid #292933;
+      border-radius: 25px;
+      padding: 35px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      font-size: 40px;
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 17px;
+      margin: 10px 0;
+      border-radius: 15px;
+      border: 2px solid #30303a;
+      background: #202027;
+      color: white;
+      font-size: 18px;
+    }
+
+    button {
+      padding: 17px 25px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 15px;
+      background: white;
+      color: black;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: .85;
+    }
+
+    .upload {
+      margin-top: 15px;
+    }
+
+    .video-card {
+      background: #202027;
+      border-radius: 20px;
+      padding: 20px;
+      margin-top: 25px;
+    }
+
+    video {
+      width: 100%;
+      max-height: 600px;
+      border-radius: 15px;
+      background: black;
+    }
+
+    .title {
+      font-size: 25px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .hashtags {
+      color: #aaa;
+      margin-top: 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .hint {
+      color: #888;
+      margin-top: 15px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 55px;
+      }
+
+      .message {
+        font-size: 30px;
+      }
+
+      .box {
+        padding: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>Ardan</h1>
+  <div class="subtitle">видеоплощадка</div>
+
+  <div class="message">
+    сультим нафиг пошел !
+  </div>
+
+  <!-- ВИДЕО -->
+  <div class="box">
+    <h2>Видео</h2>
+    <div id="videos">
+      <p>Загрузка...</p>
+    </div>
+  </div>
+
+  <!-- ОПЕРАТОР -->
+  <div class="box">
+
+    <h2>Я оператор</h2>
+
+    <div id="loginBlock">
+      <input
+        id="password"
+        type="password"
+        placeholder="Пароль оператора"
+      >
+
+      <button onclick="login()">
+        Войти
+      </button>
+    </div>
+
+    <div id="operatorBlock" class="hidden">
+
+      <input
+        id="title"
+        placeholder="Название видео"
+      >
+
+      <input
+        id="hashtags"
+        placeholder="#хэштеги"
+      >
+
+      <input
+        id="video"
+        class="upload"
+        type="file"
+        accept="video/*"
+      >
+
+      <button onclick="uploadVideo()">
+        📤 Загрузить видео
+      </button>
+
+      <button onclick="addAnother()">
+        ➕ Добавить ещё видео
+      </button>
+
+      <div id="extraVideos"></div>
+
+      <p class="hint">
+        Только оператор может добавлять видео,
+        названия и хэштеги.
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+let token = sessionStorage.getItem("ardan_token");
+
+if (token) {
+  showOperator();
+}
+
+loadVideos();
+
+
+async function login() {
+
+  const password =
+    document.getElementById("password").value;
+
+  try {
+
+    const response = await fetch("/api/login", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        password: password
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Ошибка входа");
+      return;
+    }
+
+    token = data.token;
+
+    sessionStorage.setItem(
+      "ardan_token",
+      token
+    );
+
+    showOperator();
+
+  } catch (error) {
+
+    alert("Ошибка соединения с сервером");
+
+  }
+}
+
+
+function showOperator() {
+
+  document
+    .getElementById("loginBlock")
+    .classList.add("hidden");
+
+  document
+    .getElementById("operatorBlock")
+    .classList.remove("hidden");
+}
+
+
+async function uploadVideo() {
+
+  const file =
+    document.getElementById("video").files[0];
+
+  const title =
+    document.getElementById("title").value;
+
+  const hashtags =
+    document.getElementById("hashtags").value;
+
+  if (!file) {
+    alert("Сначала выбери видео");
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append("video", file);
+  formData.append("title", title);
+  formData.append("hashtags", hashtags);
+
+  try {
+
+    const response = await fetch(
+      "/api/videos",
+      {
+        method: "POST",
+
+        headers: {
+          "Authorization":
+            "Bearer " + token
+        },
+
+        body: formData
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Ошибка загрузки");
+      return;
+    }
+
+    alert("Видео загружено! 🎉");
+
+    document.getElementById("title").value = "";
+    document.getElementById("hashtags").value = "";
+    document.getElementById("video").value = "";
+
+    loadVideos();
+
+  } catch (error) {
+
+    alert("Ошибка соединения");
+
+  }
+}
+
+
+async function loadVideos() {
+
+  try {
+
+    const response =
+      await fetch("/api/videos");
+
+    const videos =
+      await response.json();
+
+    const container =
+      document.getElementById("videos");
+
+    if (!videos.length) {
+
+      container.innerHTML =
+        "<p>Пока видео нет.</p>";
+
+      return;
+    }
+
+    container.innerHTML = "";
+
+    videos.forEach(video => {
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "video-card";
+
+      card.innerHTML = `
+        <video
+          controls
+          playsinline
+          src="${video.file}">
+        </video>
+
+        <div class="title">
+          ${escapeHtml(video.title)}
+        </div>
+
+        <div class="hashtags">
+          ${escapeHtml(video.hashtags)}
+        </div>
+      `;
+
+      container.appendChild(card);
+
+    });
+
+  } catch (error) {
+
+    document.getElementById("videos").innerHTML =
+      "<p>Не удалось загрузить видео.</p>";
+
+  }
+}
+
+
+function addAnother() {
+
+  const div =
+    document.createElement("div");
+
+  div.innerHTML = `
+    <input
+      type="text"
+      placeholder="Название ещё одного видео"
+    >
+
+    <input
+      type="text"
+      placeholder="#хэштеги"
+    >
+
+    <input
+      type="file"
+      accept="video/*"
+    >
+  `;
+
+  document
+    .getElementById("extraVideos")
+    .appendChild(div);
+}
+
+
+function escapeHtml(text) {
+
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+</script>
+
+</body>
+</html>
