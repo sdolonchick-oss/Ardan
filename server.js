@@ -1,0 +1,15 @@
+const express=require("express"), multer=require("multer"), path=require("path"), fs=require("fs");
+const app=express(), PORT=process.env.PORT||3000, OPERATOR_PASSWORD=process.env.OPERATOR_PASSWORD||"change-me";
+const DATA=path.join(__dirname,"data.json"), UP=path.join(__dirname,"uploads");
+if(!fs.existsSync(UP))fs.mkdirSync(UP);
+if(!fs.existsSync(DATA))fs.writeFileSync(DATA,JSON.stringify({videos:[]},null,2));
+const load=()=>JSON.parse(fs.readFileSync(DATA)); const save=x=>fs.writeFileSync(DATA,JSON.stringify(x,null,2));
+const upload=multer({dest:UP, limits:{fileSize:500*1024*1024}, fileFilter:(r,f,cb)=>cb(null,f.mimetype.startsWith("video/"))});
+app.use(express.json()); app.use(express.static(path.join(__dirname,"public"))); app.use("/uploads",express.static(UP));
+const sessions=new Set();
+app.post("/api/login",(req,res)=>{if(req.body.password===OPERATOR_PASSWORD){const t=Math.random().toString(36).slice(2)+Date.now();sessions.add(t);return res.json({token:t})}res.status(401).json({error:"Неверный пароль"})});
+const auth=(req,res,next)=>{if(!sessions.has(req.headers.authorization?.replace("Bearer ","")))return res.status(401).json({error:"Только оператор"});next()};
+app.get("/api/videos",(req,res)=>res.json(load().videos));
+app.post("/api/videos",auth,upload.single("video"),(req,res)=>{if(!req.file)return res.status(400).json({error:"Нужно видео"});let d=load();let v={id:Date.now().toString(),title:req.body.title||"Без названия",hashtags:req.body.hashtags||"",file:"/uploads/"+req.file.filename};d.videos.unshift(v);save(d);res.json(v)});
+app.delete("/api/videos/:id",auth,(req,res)=>{let d=load(),v=d.videos.find(x=>x.id===req.params.id);if(v){try{fs.unlinkSync(path.join(UP,path.basename(v.file)))}catch{} d.videos=d.videos.filter(x=>x.id!==req.params.id);save(d)}res.json({ok:true})});
+app.listen(PORT,()=>console.log("Ardan running on "+PORT));
