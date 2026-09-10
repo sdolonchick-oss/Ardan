@@ -1,0 +1,20 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ardan</title>
+<style>
+body{margin:0;background:#09090d;color:#fff;font-family:Arial,sans-serif}main{max-width:900px;margin:auto;padding:35px 16px}
+h1{font-size:64px;margin:0}.sub{color:#aaa;margin:4px 0 30px}.banner{font-size:28px;font-weight:800;margin:20px 0 30px}.card{background:#14141b;border:1px solid #292934;border-radius:20px;padding:18px;margin:18px 0}video{width:100%;border-radius:14px;background:#000}
+button,input{padding:12px;border-radius:10px;border:1px solid #333;background:#202029;color:white}button{cursor:pointer;font-weight:700}.operator{display:none}.operator.show{display:block}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.row input{flex:1;min-width:180px}.meta{color:#aaa;margin:10px 0}.danger{background:#4a1717}.login{display:flex;gap:8px;flex-wrap:wrap}small{color:#777}
+</style></head><body><main>
+<h1>Ardan</h1><div class="sub">видеоплощадка</div><div class="banner">сультим нафиг пошел !</div>
+<section class="card"><h2>Видео</h2><div id="feed">Загрузка...</div></section>
+<section class="card"><h2>Я оператор</h2><div class="login"><input id="pass" type="password" placeholder="Пароль оператора"><button onclick="login()">Войти</button></div>
+<div id="op" class="operator"><div class="row"><input id="title" placeholder="Название"><input id="tags" placeholder="#хештеги"></div>
+<div class="row"><input id="file" type="file" accept="video/*"><button onclick="addVideo()">Добавить еще видео</button></div><small>Только оператор может добавлять, называть и задавать хештеги.</small></div></section>
+</main><script>
+let token=localStorage.ardanToken||"";
+async function load(){let r=await fetch("/api/videos"),a=await r.json();feed.innerHTML=a.length?a.map(v=>`<article class="card"><h2>${esc(v.title)}</h2><video controls playsinline src="${v.file}"></video><div class="meta">${esc(v.hashtags)}</div>${token?`<button class="danger" onclick="del('${v.id}')">Удалить</button>`:""}</article>`).join(""):"Пока видео нет."}
+async function login(){let r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pass.value})});if(r.ok){token=(await r.json()).token;localStorage.ardanToken=token;op.classList.add("show");load()}else alert("Неверный пароль")}
+async function addVideo(){if(!file.files[0])return alert("Выбери видео");let f=new FormData();f.append("video",file.files[0]);f.append("title",title.value);f.append("hashtags",tags.value);let r=await fetch("/api/videos",{method:"POST",headers:{Authorization:"Bearer "+token},body:f});if(!r.ok)return alert("Нужен вход оператора");title.value=tags.value=file.value="";load()}
+async function del(id){await fetch("/api/videos/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});load()}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+if(token)op.classList.add("show");load();
+</script></body></html>
