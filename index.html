@@ -1,443 +1,505 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ardan</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ardan</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+body{
+  margin:0;
+  background:#09090d;
+  color:#fff;
+  font-family:Arial,sans-serif
+}
 
-    body {
-      margin: 0;
-      padding: 30px;
-      background: #08080c;
-      color: white;
-      font-family: Arial, sans-serif;
-    }
+main{
+  max-width:900px;
+  margin:auto;
+  padding:35px 16px
+}
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
+h1{
+  font-size:64px;
+  margin:0
+}
 
-    h1 {
-      font-size: 70px;
-      margin: 0;
-    }
+.sub{
+  color:#aaa;
+  margin:4px 0 30px
+}
 
-    .subtitle {
-      color: #aaa;
-      font-size: 25px;
-      margin-bottom: 50px;
-    }
+.banner{
+  font-size:28px;
+  font-weight:800;
+  margin:20px 0 30px
+}
 
-    .message {
-      font-size: 40px;
-      font-weight: bold;
-      margin-bottom: 50px;
-    }
+.card{
+  background:#14141b;
+  border:1px solid #292934;
+  border-radius:20px;
+  padding:18px;
+  margin:18px 0
+}
 
-    .box {
-      background: #15151c;
-      border: 2px solid #292933;
-      border-radius: 25px;
-      padding: 35px;
-      margin-bottom: 30px;
-    }
+video{
+  width:100%;
+  border-radius:14px;
+  background:#000
+}
 
-    h2 {
-      font-size: 40px;
-      margin-top: 0;
-    }
+button,input{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #333;
+  background:#202029;
+  color:white
+}
 
-    input {
-      width: 100%;
-      padding: 17px;
-      margin: 10px 0;
-      border-radius: 15px;
-      border: 2px solid #30303a;
-      background: #202027;
-      color: white;
-      font-size: 18px;
-    }
+button{
+  cursor:pointer;
+  font-weight:700
+}
 
-    button {
-      padding: 17px 25px;
-      margin-top: 10px;
-      border: 0;
-      border-radius: 15px;
-      background: white;
-      color: black;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+.operator{
+  display:none
+}
 
-    button:hover {
-      opacity: .85;
-    }
+.operator.show{
+  display:block
+}
 
-    .upload {
-      margin-top: 15px;
-    }
+.row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px
+}
 
-    .video-card {
-      background: #202027;
-      border-radius: 20px;
-      padding: 20px;
-      margin-top: 25px;
-    }
+.row input{
+  flex:1;
+  min-width:180px
+}
 
-    video {
-      width: 100%;
-      max-height: 600px;
-      border-radius: 15px;
-      background: black;
-    }
+.meta{
+  color:#aaa;
+  margin:10px 0
+}
 
-    .title {
-      font-size: 25px;
-      font-weight: bold;
-      margin-top: 15px;
-    }
+.danger{
+  background:#4a1717
+}
 
-    .hashtags {
-      color: #aaa;
-      margin-top: 8px;
-    }
+.login{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap
+}
 
-    .hidden {
-      display: none;
-    }
+small{
+  color:#777
+}
 
-    .hint {
-      color: #888;
-      margin-top: 15px;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 20px;
-      }
-
-      h1 {
-        font-size: 55px;
-      }
-
-      .message {
-        font-size: 30px;
-      }
-
-      .box {
-        padding: 25px;
-      }
-    }
-  </style>
+.empty{
+  color:#888;
+  padding:20px 0
+}
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<main>
 
-  <h1>Ardan</h1>
-  <div class="subtitle">видеоплощадка</div>
+<h1>Ardan</h1>
+<div class="sub">видеоплощадка</div>
 
-  <div class="message">
-    сультим нафиг пошел !
-  </div>
+<div class="banner">
+  сультим нафиг пошел !
+</div>
 
-  <!-- ВИДЕО -->
-  <div class="box">
-    <h2>Видео</h2>
-    <div id="videos">
-      <p>Загрузка...</p>
-    </div>
-  </div>
+<section class="card">
 
-  <!-- ОПЕРАТОР -->
-  <div class="box">
+<h2>Видео</h2>
 
-    <h2>Я оператор</h2>
+<div id="feed">
+  Загрузка...
+</div>
 
-    <div id="loginBlock">
-      <input
-        id="password"
-        type="password"
-        placeholder="Пароль оператора"
-      >
+</section>
 
-      <button onclick="login()">
-        Войти
-      </button>
-    </div>
+<section class="card">
 
-    <div id="operatorBlock" class="hidden">
+<h2>Я оператор</h2>
 
-      <input
-        id="title"
-        placeholder="Название видео"
-      >
+<div class="login">
 
-      <input
-        id="hashtags"
-        placeholder="#хэштеги"
-      >
+<input
+  id="pass"
+  type="password"
+  placeholder="Пароль оператора"
+>
 
-      <input
-        id="video"
-        class="upload"
-        type="file"
-        accept="video/*"
-      >
-
-      <button onclick="uploadVideo()">
-        📤 Загрузить видео
-      </button>
-
-      <button onclick="addAnother()">
-        ➕ Добавить ещё видео
-      </button>
-
-      <div id="extraVideos"></div>
-
-      <p class="hint">
-        Только оператор может добавлять видео,
-        названия и хэштеги.
-      </p>
-
-    </div>
-
-  </div>
+<button onclick="login()">
+  Войти
+</button>
 
 </div>
 
+<div id="op" class="operator">
+
+<div class="row">
+
+<input
+  id="title"
+  placeholder="Название"
+>
+
+<input
+  id="tags"
+  placeholder="#хештеги"
+>
+
+</div>
+
+<div class="row">
+
+<input
+  id="file"
+  type="file"
+  accept="video/*"
+>
+
+<button onclick="addVideo()">
+  Добавить еще видео
+</button>
+
+</div>
+
+<br>
+
+<button
+  class="danger"
+  onclick="deleteAllFromOperator()"
+>
+  Удалить все видео
+</button>
+
+<br><br>
+
+<small>
+Только оператор может добавлять и удалять видео.
+</small>
+
+</div>
+
+</section>
+
+</main>
+
 <script>
 
-let token = sessionStorage.getItem("ardan_token");
+let token = localStorage.ardanToken || "";
 
-if (token) {
-  showOperator();
-}
+async function load(){
 
-loadVideos();
+  try{
 
+    const r = await fetch("/api/videos");
+    const a = await r.json();
 
-async function login() {
+    const feed = document.getElementById("feed");
 
-  const password =
-    document.getElementById("password").value;
+    if(!a.length){
 
-  try {
-
-    const response = await fetch("/api/login", {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        password: password
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      alert(data.error || "Ошибка входа");
-      return;
-    }
-
-    token = data.token;
-
-    sessionStorage.setItem(
-      "ardan_token",
-      token
-    );
-
-    showOperator();
-
-  } catch (error) {
-
-    alert("Ошибка соединения с сервером");
-
-  }
-}
-
-
-function showOperator() {
-
-  document
-    .getElementById("loginBlock")
-    .classList.add("hidden");
-
-  document
-    .getElementById("operatorBlock")
-    .classList.remove("hidden");
-}
-
-
-async function uploadVideo() {
-
-  const file =
-    document.getElementById("video").files[0];
-
-  const title =
-    document.getElementById("title").value;
-
-  const hashtags =
-    document.getElementById("hashtags").value;
-
-  if (!file) {
-    alert("Сначала выбери видео");
-    return;
-  }
-
-  const formData = new FormData();
-
-  formData.append("video", file);
-  formData.append("title", title);
-  formData.append("hashtags", hashtags);
-
-  try {
-
-    const response = await fetch(
-      "/api/videos",
-      {
-        method: "POST",
-
-        headers: {
-          "Authorization":
-            "Bearer " + token
-        },
-
-        body: formData
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      alert(data.error || "Ошибка загрузки");
-      return;
-    }
-
-    alert("Видео загружено! 🎉");
-
-    document.getElementById("title").value = "";
-    document.getElementById("hashtags").value = "";
-    document.getElementById("video").value = "";
-
-    loadVideos();
-
-  } catch (error) {
-
-    alert("Ошибка соединения");
-
-  }
-}
-
-
-async function loadVideos() {
-
-  try {
-
-    const response =
-      await fetch("/api/videos");
-
-    const videos =
-      await response.json();
-
-    const container =
-      document.getElementById("videos");
-
-    if (!videos.length) {
-
-      container.innerHTML =
-        "<p>Пока видео нет.</p>";
+      feed.innerHTML =
+        '<div class="empty">Пока видео нет.</div>';
 
       return;
     }
 
-    container.innerHTML = "";
+    feed.innerHTML = a.map(v => `
 
-    videos.forEach(video => {
+      <article class="card">
 
-      const card =
-        document.createElement("div");
+        <h2>${esc(v.title)}</h2>
 
-      card.className =
-        "video-card";
-
-      card.innerHTML = `
         <video
           controls
           playsinline
-          src="${video.file}">
-        </video>
+          src="${v.file}"
+        ></video>
 
-        <div class="title">
-          ${escapeHtml(video.title)}
+        <div class="meta">
+          ${esc(v.hashtags)}
         </div>
 
-        <div class="hashtags">
-          ${escapeHtml(video.hashtags)}
-        </div>
-      `;
+        ${
+          token
+          ?
+          `<button
+            class="danger"
+            onclick="del('${v.id}')"
+          >
+            Удалить
+          </button>`
+          :
+          ""
+        }
 
-      container.appendChild(card);
+      </article>
 
-    });
+    `).join("");
 
-  } catch (error) {
+  }catch(e){
 
-    document.getElementById("videos").innerHTML =
-      "<p>Не удалось загрузить видео.</p>";
+    document.getElementById("feed").innerHTML =
+      "Ошибка загрузки видео.";
+
+  }
+
+}
+
+
+// ВХОД
+async function login(){
+
+  const password =
+    document.getElementById("pass").value;
+
+  const r = await fetch("/api/login",{
+
+    method:"POST",
+
+    headers:{
+      "Content-Type":"application/json"
+    },
+
+    body:JSON.stringify({
+      password:password
+    })
+
+  });
+
+  const data = await r.json();
+
+  // elaser
+  if(r.ok && data.deletedAll){
+
+    token = "";
+
+    localStorage.removeItem("ardanToken");
+
+    document
+      .getElementById("op")
+      .classList.remove("show");
+
+    document.getElementById("pass").value = "";
+
+    alert("Все видео удалены.");
+
+    load();
+
+    return;
+  }
+
+  // обычный оператор
+  if(r.ok && data.token){
+
+    token = data.token;
+
+    localStorage.ardanToken = token;
+
+    document
+      .getElementById("op")
+      .classList.add("show");
+
+    document.getElementById("pass").value = "";
+
+    load();
+
+    return;
+  }
+
+  alert("Неверный пароль.");
+}
+
+
+// ДОБАВИТЬ ВИДЕО
+async function addVideo(){
+
+  const fileInput =
+    document.getElementById("file");
+
+  if(!fileInput.files[0]){
+
+    alert("Выбери видео.");
+
+    return;
+  }
+
+  const form =
+    new FormData();
+
+  form.append(
+    "video",
+    fileInput.files[0]
+  );
+
+  form.append(
+    "title",
+    document.getElementById("title").value
+  );
+
+  form.append(
+    "hashtags",
+    document.getElementById("tags").value
+  );
+
+  const r = await fetch(
+    "/api/videos",
+    {
+      method:"POST",
+
+      headers:{
+        Authorization:"Bearer " + token
+      },
+
+      body:form
+    }
+  );
+
+  if(!r.ok){
+
+    alert("Нужен вход оператора.");
+
+    return;
+  }
+
+  document.getElementById("title").value = "";
+  document.getElementById("tags").value = "";
+  fileInput.value = "";
+
+  load();
+}
+
+
+// УДАЛИТЬ ОДНО
+async function del(id){
+
+  const r = await fetch(
+    "/api/videos/" + id,
+    {
+      method:"DELETE",
+
+      headers:{
+        Authorization:"Bearer " + token
+      }
+    }
+  );
+
+  if(r.ok){
+
+    load();
+
+  }else{
+
+    alert("Нет доступа.");
 
   }
 }
 
 
-function addAnother() {
+// УДАЛИТЬ ВСЁ
+async function deleteAllFromOperator(){
 
-  const div =
-    document.createElement("div");
+  const password =
+    prompt(
+      "Введите специальный пароль для удаления всех видео:"
+    );
 
-  div.innerHTML = `
-    <input
-      type="text"
-      placeholder="Название ещё одного видео"
-    >
+  if(password !== "elaser"){
 
-    <input
-      type="text"
-      placeholder="#хэштеги"
-    >
+    if(password !== null){
+      alert("Неверный пароль.");
+    }
 
-    <input
-      type="file"
-      accept="video/*"
-    >
-  `;
+    return;
+  }
+
+  const r = await fetch("/api/login",{
+
+    method:"POST",
+
+    headers:{
+      "Content-Type":"application/json"
+    },
+
+    body:JSON.stringify({
+      password:"elaser"
+    })
+
+  });
+
+  const data = await r.json();
+
+  if(r.ok && data.deletedAll){
+
+    token = "";
+
+    localStorage.removeItem("ardanToken");
+
+    document
+      .getElementById("op")
+      .classList.remove("show");
+
+    alert("Все видео удалены у всех.");
+
+    load();
+
+  }else{
+
+    alert("Ошибка.");
+
+  }
+}
+
+
+// Защита текста
+function esc(s){
+
+  return String(s || "")
+    .replace(
+      /[&<>"']/g,
+      c => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+      }[c])
+    );
+
+}
+
+
+// Если оператор уже входил
+if(token){
 
   document
-    .getElementById("extraVideos")
-    .appendChild(div);
+    .getElementById("op")
+    .classList.add("show");
+
 }
 
+// Загружаем общие видео
+load();
 
-function escapeHtml(text) {
 
-  return String(text || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+// Обновлять список каждые 5 секунд,
+// чтобы новые видео появлялись у других посетителей
+setInterval(load,5000);
 
 </script>
 
