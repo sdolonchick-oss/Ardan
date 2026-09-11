@@ -6,98 +6,106 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Пароль оператора
-const OPERATOR_PASSWORD =
-  process.env.OPERATOR_PASSWORD || "ardan";
+// ОБЫЧНЫЙ ПАРОЛЬ ОПЕРАТОРА
+const OPERATOR_PASSWORD = process.env.OPERATOR_PASSWORD || "operator";
 
-// Папки и файл данных
+// СПЕЦИАЛЬНЫЙ ПАРОЛЬ: УДАЛИТЬ ВСЕ ВИДЕО
+const DELETE_ALL_PASSWORD = "elaser";
+
 const DATA = path.join(__dirname, "data.json");
-const UPLOADS = path.join(__dirname, "uploads");
+const UP = path.join(__dirname, "uploads");
 
-// Создаём uploads
-if (!fs.existsSync(UPLOADS)) {
-  fs.mkdirSync(UPLOADS, { recursive: true });
+if (!fs.existsSync(UP)) {
+  fs.mkdirSync(UP, { recursive: true });
 }
 
-// Создаём data.json
 if (!fs.existsSync(DATA)) {
-  fs.writeFileSync(
-    DATA,
-    JSON.stringify({ videos: [] }, null, 2)
-  );
+  fs.writeFileSync(DATA, JSON.stringify({ videos: [] }, null, 2));
 }
 
-// Работа с данными
-function loadData() {
-  return JSON.parse(
-    fs.readFileSync(DATA, "utf8")
-  );
+function load() {
+  try {
+    return JSON.parse(fs.readFileSync(DATA, "utf8"));
+  } catch {
+    return { videos: [] };
+  }
 }
 
-function saveData(data) {
-  fs.writeFileSync(
-    DATA,
-    JSON.stringify(data, null, 2)
-  );
+function save(data) {
+  fs.writeFileSync(DATA, JSON.stringify(data, null, 2));
 }
 
-// Загрузка видео
 const upload = multer({
-  dest: UPLOADS,
+  dest: UP,
   limits: {
     fileSize: 500 * 1024 * 1024
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("video/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Можно загружать только видео"));
-    }
+    cb(null, file.mimetype.startsWith("video/"));
   }
 });
 
-// ВАЖНО:
-// index.html находится в корне репозитория
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(UP));
 
-// Видео доступны всем
-app.use(
-  "/uploads",
-  express.static(UPLOADS)
-);
-
-// Сессии операторов
 const sessions = new Set();
 
-// Вход оператора
+// ВХОД
 app.post("/api/login", (req, res) => {
-  if (req.body.password === OPERATOR_PASSWORD) {
+  const password = req.body.password;
+
+  // elaser = удалить абсолютно все видео
+  if (password === DELETE_ALL_PASSWORD) {
+    const data = load();
+
+    for (const video of data.videos) {
+      try {
+        const filename = path.basename(video.file);
+        const filePath = path.join(UP, filename);
+
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    data.videos = [];
+    save(data);
+
+    return res.json({
+      ok: true,
+      deletedAll: true
+    });
+  }
+
+  // Обычный оператор
+  if (password === OPERATOR_PASSWORD) {
     const token =
       Math.random().toString(36).slice(2) +
-      Date.now().toString(36);
+      Date.now();
 
     sessions.add(token);
 
     return res.json({
       ok: true,
-      token: token
+      token
     });
   }
 
   res.status(401).json({
-    ok: false,
     error: "Неверный пароль"
   });
 });
 
-// Проверка оператора
+// ПРОВЕРКА ОПЕРАТОРА
 function auth(req, res, next) {
-  const header =
-    req.headers.authorization || "";
-
-  const token =
-    header.replace("Bearer ", "");
+  const token = req.headers.authorization?.replace(
+    "Bearer ",
+    ""
+  );
 
   if (!sessions.has(token)) {
     return res.status(401).json({
@@ -108,59 +116,45 @@ function auth(req, res, next) {
   next();
 }
 
-// Получить все видео
-// Доступно всем посетителям
+// ВСЕ ВИДЕО
 app.get("/api/videos", (req, res) => {
-  const data = loadData();
-
-  res.json(data.videos);
+  res.json(load().videos);
 });
 
-// Добавить видео
-// Только оператор
+// ДОБАВИТЬ ВИДЕО
 app.post(
   "/api/videos",
   auth,
   upload.single("video"),
   (req, res) => {
-
     if (!req.file) {
       return res.status(400).json({
-        error: "Видео не загружено"
+        error: "Нужно выбрать видео"
       });
     }
 
-    const data = loadData();
+    const data = load();
 
     const video = {
       id: Date.now().toString(),
-      title:
-        req.body.title ||
-        "Без названия",
-      hashtags:
-        req.body.hashtags ||
-        "",
-      file:
-        "/uploads/" +
-        req.file.filename
+      title: req.body.title || "Без названия",
+      hashtags: req.body.hashtags || "",
+      file: "/uploads/" + req.file.filename
     };
 
     data.videos.unshift(video);
-
-    saveData(data);
+    save(data);
 
     res.json(video);
   }
 );
 
-// Удалить видео
-// Только оператор
+// УДАЛИТЬ ОДНО ВИДЕО
 app.delete(
   "/api/videos/:id",
   auth,
   (req, res) => {
-
-    const data = loadData();
+    const data = load();
 
     const video = data.videos.find(
       v => v.id === req.params.id
@@ -168,31 +162,27 @@ app.delete(
 
     if (video) {
       try {
-        fs.unlinkSync(
-          path.join(
-            UPLOADS,
-            path.basename(video.file)
-          )
-        );
-      } catch (e) {}
+        const filename = path.basename(video.file);
+        const filePath = path.join(UP, filename);
 
-      data.videos =
-        data.videos.filter(
-          v => v.id !== req.params.id
-        );
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (e) {
+        console.error(e);
+      }
 
-      saveData(data);
+      data.videos = data.videos.filter(
+        v => v.id !== req.params.id
+      );
+
+      save(data);
     }
 
-    res.json({
-      ok: true
-    });
+    res.json({ ok: true });
   }
 );
 
-// Запуск сервера
 app.listen(PORT, () => {
-  console.log(
-    "Ardan running on port " + PORT
-  );
+  console.log("Ardan running on port " + PORT);
 });
