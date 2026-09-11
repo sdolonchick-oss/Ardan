@@ -663,4 +663,151 @@ async function addVideo() {
   ).value = "";
 
   document.getElementById(
-    "
+    "tags"
+  ).value = "";
+
+  fileInput.value = "";
+
+  document.getElementById(
+    "fileName"
+  ).textContent =
+    "Видео не выбрано";
+
+
+  alert("Видео загружено!");
+
+  load();
+}
+
+
+/* УДАЛИТЬ ОДНО */
+
+async function deleteVideo(id) {
+
+  const response =
+    await fetch(
+      "/api/videos/" + id,
+      {
+        method: "DELETE",
+
+        headers: {
+          Authorization:
+            "Bearer " + token
+        }
+      }
+    );
+
+
+  if (response.ok) {
+
+    load();
+
+  } else {
+
+    alert("Нет доступа.");
+
+  }
+}
+
+
+/* ELASER */
+
+async function deleteAll() {
+
+  const password =
+    prompt(
+      "Введите пароль удаления всех видео:"
+    );
+
+
+  if (password !== "elaser") {
+
+    alert("Неверный пароль.");
+
+    return;
+  }
+
+
+  const response =
+    await fetch("/api/login", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        password: "elaser"
+      })
+
+    });
+
+
+  const data =
+    await response.json();
+
+
+  if (
+    response.ok &&
+    data.deletedAll
+  ) {
+
+    token = "";
+
+    localStorage.removeItem(
+      "ardanToken"
+    );
+
+    hideOperator();
+
+    alert(
+      "Все видео удалены у всех."
+    );
+
+    load();
+
+  }
+
+}
+
+
+/* ЗАЩИТА HTML */
+
+function esc(value) {
+
+  return String(value || "")
+    .replace(
+      /[&<>"']/g,
+      char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]
+    );
+}
+
+
+/* ЕСЛИ ОПЕРАТОР УЖЕ ВОШЁЛ */
+
+if (token) {
+  showOperator();
+}
+
+
+/* ЗАПУСК */
+
+load();
+
+
+/* ОБНОВЛЯТЬ ЛЕНТУ КАЖДЫЕ 5 СЕКУНД */
+
+setInterval(load, 5000);
+
+</script>
+
+</body>
+
+</html>
