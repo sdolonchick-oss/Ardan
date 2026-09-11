@@ -1,38 +1,165 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>Ardan</title>
 
 <style>
+
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
   background:#09090d;
-  color:#fff;
-  font-family:Arial,sans-serif
+  color:white;
+  font-family:Arial,sans-serif;
 }
 
 main{
   max-width:900px;
   margin:auto;
-  padding:35px 16px
+  padding:20px 16px 40px;
 }
+
+/* ОПЕРАТОР СВЕРХУ */
+
+.operator-top{
+  background:#14141b;
+  border:1px solid #292934;
+  border-radius:18px;
+  padding:15px;
+  margin-bottom:20px;
+}
+
+.operator-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.operator-title h2{
+  margin:0;
+}
+
+.badge{
+  display:none;
+  background:#1f8f4d;
+  padding:7px 12px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.badge.show{
+  display:block;
+}
+
+.login{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+}
+
+.login input{
+  flex:1;
+}
+
+input,
+button{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #333;
+  background:#202029;
+  color:white;
+  font-size:15px;
+}
+
+button{
+  cursor:pointer;
+  font-weight:bold;
+}
+
+button:hover{
+  background:#292934;
+}
+
+/* ПАНЕЛЬ ПОСЛЕ ВХОДА */
+
+.operator-panel{
+  display:none;
+  margin-top:15px;
+}
+
+.operator-panel.show{
+  display:block;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.row input{
+  flex:1;
+  min-width:180px;
+}
+
+.upload-button{
+  display:inline-block;
+  padding:12px 16px;
+  border-radius:10px;
+  background:#202029;
+  border:1px solid #333;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.upload-button:hover{
+  background:#292934;
+}
+
+#file{
+  display:none;
+}
+
+.file-name{
+  color:#aaa;
+  margin-top:8px;
+  font-size:14px;
+}
+
+.danger{
+  background:#4a1717;
+}
+
+.danger:hover{
+  background:#681f1f;
+}
+
+/* САЙТ */
 
 h1{
   font-size:64px;
-  margin:0
+  margin:10px 0 0;
 }
 
 .sub{
   color:#aaa;
-  margin:4px 0 30px
+  margin:4px 0 25px;
 }
 
 .banner{
   font-size:28px;
   font-weight:800;
-  margin:20px 0 30px
+  margin:20px 0 30px;
 }
 
 .card{
@@ -40,71 +167,29 @@ h1{
   border:1px solid #292934;
   border-radius:20px;
   padding:18px;
-  margin:18px 0
+  margin:18px 0;
 }
 
 video{
   width:100%;
   border-radius:14px;
-  background:#000
-}
-
-button,input{
-  padding:12px;
-  border-radius:10px;
-  border:1px solid #333;
-  background:#202029;
-  color:white
-}
-
-button{
-  cursor:pointer;
-  font-weight:700
-}
-
-.operator{
-  display:none
-}
-
-.operator.show{
-  display:block
-}
-
-.row{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:12px
-}
-
-.row input{
-  flex:1;
-  min-width:180px
+  background:#000;
 }
 
 .meta{
   color:#aaa;
-  margin:10px 0
-}
-
-.danger{
-  background:#4a1717
-}
-
-.login{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap
-}
-
-small{
-  color:#777
+  margin:10px 0;
 }
 
 .empty{
   color:#888;
-  padding:20px 0
+  padding:20px 0;
 }
+
+.logout{
+  margin-top:10px;
+}
+
 </style>
 </head>
 
@@ -112,106 +197,155 @@ small{
 
 <main>
 
+<!-- ОПЕРАТОР ВСЕГДА СВЕРХУ -->
+
+<section class="operator-top">
+
+  <div class="operator-title">
+
+    <h2>🔐 Оператор</h2>
+
+    <div id="badge" class="badge">
+      ОПЕРАТОР
+    </div>
+
+  </div>
+
+  <!-- ДО ВХОДА -->
+
+  <div id="loginBox" class="login">
+
+    <input
+      id="pass"
+      type="password"
+      placeholder="Пароль оператора"
+    >
+
+    <button onclick="login()">
+      Войти
+    </button>
+
+  </div>
+
+
+  <!-- ПОСЛЕ ВХОДА -->
+
+  <div id="operatorPanel" class="operator-panel">
+
+    <div class="row">
+
+      <input
+        id="title"
+        placeholder="Название видео"
+      >
+
+      <input
+        id="tags"
+        placeholder="#хештеги"
+      >
+
+    </div>
+
+
+    <div class="row">
+
+      <label class="upload-button">
+
+        📁 Выбрать видео
+
+        <input
+          id="file"
+          type="file"
+          accept="video/*"
+          onchange="showFileName()"
+        >
+
+      </label>
+
+      <button onclick="addVideo()">
+        ⬆️ Загрузить видео
+      </button>
+
+    </div>
+
+    <div id="fileName" class="file-name">
+      Видео не выбрано
+    </div>
+
+
+    <div class="row">
+
+      <button
+        class="danger"
+        onclick="deleteAll()"
+      >
+        🗑️ Удалить все видео
+      </button>
+
+      <button
+        class="logout"
+        onclick="logout()"
+      >
+        Выйти
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- САЙТ -->
+
 <h1>Ardan</h1>
-<div class="sub">видеоплощадка</div>
+
+<div class="sub">
+  видеоплощадка
+</div>
 
 <div class="banner">
   сультим нафиг пошел !
 </div>
 
-<section class="card">
-
-<h2>Видео</h2>
-
-<div id="feed">
-  Загрузка...
-</div>
-
-</section>
 
 <section class="card">
 
-<h2>Я оператор</h2>
+  <h2>🎬 Видео</h2>
 
-<div class="login">
-
-<input
-  id="pass"
-  type="password"
-  placeholder="Пароль оператора"
->
-
-<button onclick="login()">
-  Войти
-</button>
-
-</div>
-
-<div id="op" class="operator">
-
-<div class="row">
-
-<input
-  id="title"
-  placeholder="Название"
->
-
-<input
-  id="tags"
-  placeholder="#хештеги"
->
-
-</div>
-
-<div class="row">
-
-<input
-  id="file"
-  type="file"
-  accept="video/*"
->
-
-<button onclick="addVideo()">
-  Добавить еще видео
-</button>
-
-</div>
-
-<br>
-
-<button
-  class="danger"
-  onclick="deleteAllFromOperator()"
->
-  Удалить все видео
-</button>
-
-<br><br>
-
-<small>
-Только оператор может добавлять и удалять видео.
-</small>
-
-</div>
+  <div id="feed">
+    Загрузка...
+  </div>
 
 </section>
 
 </main>
 
+
 <script>
 
 let token = localStorage.ardanToken || "";
+
+
+// ЗАГРУЗКА СПИСКА ВИДЕО
 
 async function load(){
 
   try{
 
     const r = await fetch("/api/videos");
-    const a = await r.json();
 
-    const feed = document.getElementById("feed");
+    if(!r.ok){
+      throw new Error();
+    }
 
-    if(!a.length){
+    const videos = await r.json();
+
+    const feed =
+      document.getElementById("feed");
+
+
+    if(!videos.length){
 
       feed.innerHTML =
         '<div class="empty">Пока видео нет.</div>';
@@ -219,7 +353,8 @@ async function load(){
       return;
     }
 
-    feed.innerHTML = a.map(v => `
+
+    feed.innerHTML = videos.map(v => `
 
       <article class="card">
 
@@ -242,7 +377,7 @@ async function load(){
             class="danger"
             onclick="del('${v.id}')"
           >
-            Удалить
+            🗑️ Удалить
           </button>`
           :
           ""
@@ -262,11 +397,21 @@ async function load(){
 }
 
 
-// ВХОД
+// ВХОД ОПЕРАТОРА
+
 async function login(){
 
   const password =
     document.getElementById("pass").value;
+
+
+  if(!password){
+
+    alert("Введи пароль.");
+
+    return;
+  }
+
 
   const r = await fetch("/api/login",{
 
@@ -282,20 +427,19 @@ async function login(){
 
   });
 
+
   const data = await r.json();
 
-  // elaser
+
+  // ELASER
+
   if(r.ok && data.deletedAll){
 
     token = "";
 
     localStorage.removeItem("ardanToken");
 
-    document
-      .getElementById("op")
-      .classList.remove("show");
-
-    document.getElementById("pass").value = "";
+    hideOperator();
 
     alert("Все видео удалены.");
 
@@ -304,16 +448,16 @@ async function login(){
     return;
   }
 
-  // обычный оператор
+
+  // ОБЫЧНЫЙ ОПЕРАТОР
+
   if(r.ok && data.token){
 
     token = data.token;
 
     localStorage.ardanToken = token;
 
-    document
-      .getElementById("op")
-      .classList.add("show");
+    showOperator();
 
     document.getElementById("pass").value = "";
 
@@ -322,40 +466,117 @@ async function login(){
     return;
   }
 
+
   alert("Неверный пароль.");
+
 }
 
 
-// ДОБАВИТЬ ВИДЕО
+// ПОКАЗАТЬ ПАНЕЛЬ ОПЕРАТОРА
+
+function showOperator(){
+
+  document
+    .getElementById("operatorPanel")
+    .classList.add("show");
+
+  document
+    .getElementById("badge")
+    .classList.add("show");
+
+  document
+    .getElementById("loginBox")
+    .style.display = "none";
+
+}
+
+
+// СПРЯТАТЬ ПАНЕЛЬ
+
+function hideOperator(){
+
+  document
+    .getElementById("operatorPanel")
+    .classList.remove("show");
+
+  document
+    .getElementById("badge")
+    .classList.remove("show");
+
+  document
+    .getElementById("loginBox")
+    .style.display = "flex";
+
+}
+
+
+// ВЫЙТИ
+
+function logout(){
+
+  token = "";
+
+  localStorage.removeItem("ardanToken");
+
+  hideOperator();
+
+  load();
+
+}
+
+
+// ПОКАЗАТЬ ИМЯ ФАЙЛА
+
+function showFileName(){
+
+  const file =
+    document.getElementById("file").files[0];
+
+  document.getElementById("fileName").textContent =
+    file
+    ? "Выбрано: " + file.name
+    : "Видео не выбрано";
+
+}
+
+
+// ЗАГРУЗИТЬ ВИДЕО
+
 async function addVideo(){
 
   const fileInput =
     document.getElementById("file");
 
+
   if(!fileInput.files[0]){
 
-    alert("Выбери видео.");
+    alert("Сначала выбери видео.");
 
     return;
   }
 
+
   const form =
     new FormData();
+
 
   form.append(
     "video",
     fileInput.files[0]
   );
 
+
   form.append(
     "title",
     document.getElementById("title").value
   );
 
+
   form.append(
     "hashtags",
     document.getElementById("tags").value
   );
+
 
   const r = await fetch(
     "/api/videos",
@@ -370,22 +591,36 @@ async function addVideo(){
     }
   );
 
+
   if(!r.ok){
 
-    alert("Нужен вход оператора.");
+    alert("Сессия оператора закончилась. Войди снова.");
+
+    logout();
 
     return;
   }
 
+
   document.getElementById("title").value = "";
+
   document.getElementById("tags").value = "";
+
   fileInput.value = "";
 
+  document.getElementById("fileName").textContent =
+    "Видео не выбрано";
+
+
+  alert("Видео загружено!");
+
   load();
+
 }
 
 
-// УДАЛИТЬ ОДНО
+// УДАЛИТЬ ОДНО ВИДЕО
+
 async function del(id){
 
   const r = await fetch(
@@ -399,6 +634,7 @@ async function del(id){
     }
   );
 
+
   if(r.ok){
 
     load();
@@ -407,26 +643,35 @@ async function del(id){
 
     alert("Нет доступа.");
 
+    logout();
+
   }
+
 }
 
 
 // УДАЛИТЬ ВСЁ
-async function deleteAllFromOperator(){
+
+async function deleteAll(){
 
   const password =
     prompt(
-      "Введите специальный пароль для удаления всех видео:"
+      "Введите пароль для удаления всех видео:"
     );
+
+
+  if(password === null){
+    return;
+  }
+
 
   if(password !== "elaser"){
 
-    if(password !== null){
-      alert("Неверный пароль.");
-    }
+    alert("Неверный пароль.");
 
     return;
   }
+
 
   const r = await fetch("/api/login",{
 
@@ -442,7 +687,9 @@ async function deleteAllFromOperator(){
 
   });
 
+
   const data = await r.json();
+
 
   if(r.ok && data.deletedAll){
 
@@ -450,23 +697,23 @@ async function deleteAllFromOperator(){
 
     localStorage.removeItem("ardanToken");
 
-    document
-      .getElementById("op")
-      .classList.remove("show");
+    hideOperator();
 
-    alert("Все видео удалены у всех.");
+    alert("Все видео удалены у всех посетителей.");
 
     load();
 
   }else{
 
-    alert("Ошибка.");
+    alert("Ошибка удаления.");
 
   }
+
 }
 
 
-// Защита текста
+// ЗАЩИТА ТЕКСТА
+
 function esc(s){
 
   return String(s || "")
@@ -484,21 +731,20 @@ function esc(s){
 }
 
 
-// Если оператор уже входил
+// ЕСЛИ ОПЕРАТОР УЖЕ ВОШЁЛ
+
 if(token){
-
-  document
-    .getElementById("op")
-    .classList.add("show");
-
+  showOperator();
 }
 
-// Загружаем общие видео
+
+// ПЕРВАЯ ЗАГРУЗКА
+
 load();
 
 
-// Обновлять список каждые 5 секунд,
-// чтобы новые видео появлялись у других посетителей
+// ОБНОВЛЯТЬ ВИДЕО КАЖДЫЕ 5 СЕКУНД
+
 setInterval(load,5000);
 
 </script>
