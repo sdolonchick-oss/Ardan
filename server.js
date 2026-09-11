@@ -5,6 +5,7 @@ const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 const OPERATOR_PASSWORD =
   process.env.OPERATOR_PASSWORD || "change-me";
 
@@ -22,10 +23,16 @@ if (!fs.existsSync(DATA)) {
   );
 }
 
-const load = () => JSON.parse(fs.readFileSync(DATA, "utf8"));
+function load() {
+  return JSON.parse(fs.readFileSync(DATA, "utf8"));
+}
 
-const save = (data) =>
-  fs.writeFileSync(DATA, JSON.stringify(data, null, 2));
+function save(data) {
+  fs.writeFileSync(
+    DATA,
+    JSON.stringify(data, null, 2)
+  );
+}
 
 const upload = multer({
   dest: UP,
@@ -40,8 +47,10 @@ const upload = multer({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// ВАЖНО: видео отдаём через Range,
-// чтобы браузер мог нормально загружать его частями.
+/* =========================
+   ВИДЕО С ПОДДЕРЖКОЙ RANGE
+========================= */
+
 app.get("/uploads/:filename", (req, res) => {
   const filename = path.basename(req.params.filename);
   const filePath = path.join(UP, filename);
@@ -53,40 +62,78 @@ app.get("/uploads/:filename", (req, res) => {
   const stat = fs.statSync(filePath);
   const fileSize = stat.size;
 
+  // Определяем тип файла
+  const ext = path.extname(filename).toLowerCase();
+
+  const contentTypes = {
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+    ".ogg": "video/ogg",
+    ".mov": "video/quicktime",
+    ".m4v": "video/mp4"
+  };
+
+  const contentType =
+    contentTypes[ext] || "video/mp4";
+
   const range = req.headers.range;
 
+  // Если браузер не просит Range
   if (!range) {
     res.writeHead(200, {
       "Content-Length": fileSize,
-      "Content-Type": "video/mp4",
+      "Content-Type": contentType,
       "Accept-Ranges": "bytes",
       "Cache-Control": "public, max-age=31536000"
     });
 
-    return fs.createReadStream(filePath).pipe(res);
+    return fs
+      .createReadStream(filePath)
+      .pipe(res);
   }
 
-  const parts = range.replace(/bytes=/, "").split("-");
-  const start = parseInt(parts[0], 10);
-  const end = parts[1]
-    ? parseInt(parts[1], 10)
+  const match = range.match(/bytes=(\d*)-(\d*)/);
+
+  if (!match) {
+    return res.status(416).end();
+  }
+
+  let start = match[1]
+    ? parseInt(match[1], 10)
+    : 0;
+
+  let end = match[2]
+    ? parseInt(match[2], 10)
     : fileSize - 1;
 
-  if (start >= fileSize || end >= fileSize) {
+  // Если браузер попросил конец больше файла —
+  // просто ставим настоящий конец файла.
+  if (end >= fileSize) {
+    end = fileSize - 1;
+  }
+
+  if (start >= fileSize || start > end) {
     res.status(416).set({
       "Content-Range": `bytes */${fileSize}`
     });
+
     return res.end();
   }
 
   const chunkSize = end - start + 1;
 
   res.writeHead(206, {
-    "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+    "Content-Range":
+      `bytes ${start}-${end}/${fileSize}`,
+
     "Accept-Ranges": "bytes",
+
     "Content-Length": chunkSize,
-    "Content-Type": "video/mp4",
-    "Cache-Control": "public, max-age=31536000"
+
+    "Content-Type": contentType,
+
+    "Cache-Control":
+      "public, max-age=31536000"
   });
 
   fs.createReadStream(filePath, {
@@ -95,12 +142,17 @@ app.get("/uploads/:filename", (req, res) => {
   }).pipe(res);
 });
 
+/* =========================
+   ОПЕРАТОР
+========================= */
+
 const sessions = new Set();
 
 app.post("/api/login", (req, res) => {
   if (req.body.password === OPERATOR_PASSWORD) {
     const token =
-      Math.random().toString(36).slice(2) + Date.now();
+      Math.random().toString(36).slice(2) +
+      Date.now();
 
     sessions.add(token);
 
@@ -112,11 +164,12 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-const auth = (req, res, next) => {
-  const token = req.headers.authorization?.replace(
-    "Bearer ",
-    ""
-  );
+function auth(req, res, next) {
+  const token =
+    req.headers.authorization?.replace(
+      "Bearer ",
+      ""
+    );
 
   if (!sessions.has(token)) {
     return res.status(401).json({
@@ -125,11 +178,19 @@ const auth = (req, res, next) => {
   }
 
   next();
-};
+}
+
+/* =========================
+   СПИСОК ВИДЕО
+========================= */
 
 app.get("/api/videos", (req, res) => {
   res.json(load().videos);
 });
+
+/* =========================
+   ДОБАВЛЕНИЕ ВИДЕО
+========================= */
 
 app.post(
   "/api/videos",
@@ -146,42 +207,71 @@ app.post(
 
     const video = {
       id: Date.now().toString(),
-      title: req.body.title || "Без названия",
-      hashtags: req.body.hashtags || "",
-      file: "/uploads/" + req.file.filename
+
+      title:
+        req.body.title ||
+        "Без названия",
+
+      hashtags:
+        req.body.hashtags ||
+        "",
+
+      file:
+        "/uploads/" +
+        req.file.filename
     };
 
     data.videos.unshift(video);
+
     save(data);
 
     res.json(video);
   }
 );
 
-app.delete("/api/videos/:id", auth, (req, res) => {
-  const data = load();
+/* =========================
+   УДАЛЕНИЕ
+========================= */
 
-  const video = data.videos.find(
-    (x) => x.id === req.params.id
-  );
+app.delete(
+  "/api/videos/:id",
+  auth,
+  (req, res) => {
+    const data = load();
 
-  if (video) {
-    try {
-      fs.unlinkSync(
-        path.join(UP, path.basename(video.file))
+    const video =
+      data.videos.find(
+        x => x.id === req.params.id
       );
-    } catch {}
 
-    data.videos = data.videos.filter(
-      (x) => x.id !== req.params.id
-    );
+    if (video) {
+      try {
+        fs.unlinkSync(
+          path.join(
+            UP,
+            path.basename(video.file)
+          )
+        );
+      } catch {}
 
-    save(data);
+      data.videos =
+        data.videos.filter(
+          x => x.id !== req.params.id
+        );
+
+      save(data);
+    }
+
+    res.json({ ok: true });
   }
+);
 
-  res.json({ ok: true });
-});
+/* =========================
+   ЗАПУСК
+========================= */
 
 app.listen(PORT, () => {
-  console.log("Ardan running on port " + PORT);
+  console.log(
+    "Ardan running on port " + PORT
+  );
 });
