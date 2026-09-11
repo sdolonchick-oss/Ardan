@@ -6,14 +6,12 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ОБЫЧНЫЙ ПАРОЛЬ ОПЕРАТОРА
 const OPERATOR_PASSWORD = process.env.OPERATOR_PASSWORD || "operator";
-
-// СПЕЦИАЛЬНЫЙ ПАРОЛЬ: УДАЛИТЬ ВСЕ ВИДЕО
 const DELETE_ALL_PASSWORD = "elaser";
 
 const DATA = path.join(__dirname, "data.json");
 const UP = path.join(__dirname, "uploads");
+const INDEX = path.join(__dirname, "index.html");
 
 if (!fs.existsSync(UP)) {
   fs.mkdirSync(UP, { recursive: true });
@@ -46,16 +44,22 @@ const upload = multer({
 });
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+
+// ГЛАВНАЯ СТРАНИЦА
+app.get("/", (req, res) => {
+  res.sendFile(INDEX);
+});
+
+// Видео
 app.use("/uploads", express.static(UP));
 
 const sessions = new Set();
 
-// ВХОД
+// Вход
 app.post("/api/login", (req, res) => {
   const password = req.body.password;
 
-  // elaser = удалить абсолютно все видео
+  // elaser — удалить ВСЕ видео
   if (password === DELETE_ALL_PASSWORD) {
     const data = load();
 
@@ -81,7 +85,7 @@ app.post("/api/login", (req, res) => {
     });
   }
 
-  // Обычный оператор
+  // Оператор
   if (password === OPERATOR_PASSWORD) {
     const token =
       Math.random().toString(36).slice(2) +
@@ -100,7 +104,6 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-// ПРОВЕРКА ОПЕРАТОРА
 function auth(req, res, next) {
   const token = req.headers.authorization?.replace(
     "Bearer ",
@@ -116,17 +119,18 @@ function auth(req, res, next) {
   next();
 }
 
-// ВСЕ ВИДЕО
+// Получить все видео
 app.get("/api/videos", (req, res) => {
   res.json(load().videos);
 });
 
-// ДОБАВИТЬ ВИДЕО
+// Добавить видео
 app.post(
   "/api/videos",
   auth,
   upload.single("video"),
   (req, res) => {
+
     if (!req.file) {
       return res.status(400).json({
         error: "Нужно выбрать видео"
@@ -149,39 +153,37 @@ app.post(
   }
 );
 
-// УДАЛИТЬ ОДНО ВИДЕО
-app.delete(
-  "/api/videos/:id",
-  auth,
-  (req, res) => {
-    const data = load();
+// Удалить одно видео
+app.delete("/api/videos/:id", auth, (req, res) => {
 
-    const video = data.videos.find(
-      v => v.id === req.params.id
-    );
+  const data = load();
 
-    if (video) {
-      try {
-        const filename = path.basename(video.file);
-        const filePath = path.join(UP, filename);
+  const video = data.videos.find(
+    v => v.id === req.params.id
+  );
 
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      } catch (e) {
-        console.error(e);
+  if (video) {
+
+    try {
+      const filename = path.basename(video.file);
+      const filePath = path.join(UP, filename);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
       }
-
-      data.videos = data.videos.filter(
-        v => v.id !== req.params.id
-      );
-
-      save(data);
+    } catch (e) {
+      console.error(e);
     }
 
-    res.json({ ok: true });
+    data.videos = data.videos.filter(
+      v => v.id !== req.params.id
+    );
+
+    save(data);
   }
-);
+
+  res.json({ ok: true });
+});
 
 app.listen(PORT, () => {
   console.log("Ardan running on port " + PORT);
